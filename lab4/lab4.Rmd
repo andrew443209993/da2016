@@ -1,0 +1,77 @@
+---
+title: "lab4"
+author: "Мухтаров Андрей"
+date: '1 декабря 2016 г '
+output: html_document
+---
+
+
+
+## R Markdown
+
+```{r}
+library(MASS) 
+data(cats)
+help(cats)
+summary(cats)
+#представленны краткие данные(отчет), сколко сошек м/ж пола, преведены основные данные:мин макс среднее итд
+```
+Рассчитайте среднее (mean), среднеквадратичное отклонение (sd) и дисперсию (var) веса кошачьих сердец.
+```{r}
+m<-mean(cats$Hwt)
+sko<-sd(cats$Hwt)
+disp<-var(cats$Hwt)
+```
+При помощи полученных значений и формул выше, рассчитайте параметры a и s. Округлите до разумного числа знаков.
+```{r}
+a<-round(m^2/disp,2)
+s<-round(disp/m,2)
+```
+Напишите функцию для расчёта параметров a и s через дисперсию и среднее для передаваемого вектора чисел. Функция должна зазываться my.gamma и возвращать рассчитанные параметры в виде именованного вектора.
+```{r}
+my.gamma <- function(x){
+  m <- mean(x)
+  v <- var(x)
+  s <- v/m
+  a <- m/s
+   return(c(a=round(a,2),s=round(s,2)))
+  }
+my.gamma(cats$Hwt)
+```
+Какие результаты возвращает функция для вектора весов сердец? Сходятся ли они с ответами в п. 4? Должны сходиться?
+#сходятся
+Постройте гистограмму весов. Добавьте на гистограмму кривую плотности вероятности при помощи функций curve и dgamma, указав ранее найденные параметры формы и масштаба.
+```{r}
+hist(cats$Hwt, xlab="Hwt",ylab="col",breaks = 15,probability=T)
+curve(dgamma(x, shape=a,scale=s),col="blue", add=T)
+```
+Получите параметры a и s отдельно для котов и кошек, использовав функцию my.gamma.
+```{r}
+a.Male<-my.gamma(cats$Hwt[cats$Sex=="M"])
+a.Female<-my.gamma(cats$Hwt[cats$Sex=="F"])
+```
+Постройте полученные функции распределения на одном графике, используя curve и dgamma
+```{r}
+hist(cats$Hwt, xlab="Hwt",ylab="col",breaks = 15, probability =T, legend("topright",c("Male", "Female", "all"),col=c("red","green", "blue"),lwd=10))
+curve(dgamma(x, shape=a.Male[1],scale=a.Male[2]),col="red", add=T)
+curve(dgamma(x, shape=a.Female[1],scale=a.Female[2]),col="green", add=T)
+```
+Случайным образом разделите данные на две группы одного размера равного количеству котов и кошек соответственно. Получите гамма-параметры для обеих групп. Повторите эксперимент несколько раз. Найдите среднюю разницу между результатами групп.
+```{r}
+parameters<-data.frame(a_M=0, a_F=0, s_M=0, s_F=0)
+for(k in 1:10){
+n<-sort(sample(47,10))[10]
+cat_M <- data.frame(Hwt=cats$Hwt[cats$Sex=="M"])
+cat_F <- data.frame(Hwt=cats$Hwt[cats$Sex=="F"])
+M<-data.frame(Hwt=cat_M[1:n,])
+F<-data.frame(Hwt=cat_F[1:n,])
+#разделили
+p<- data.frame(a_M=my.gamma(M$Hwt)[1], a_F=my.gamma(F$Hwt)[1], s_M=my.gamma(M$Hwt)[2], s_F=my.gamma(F$Hwt)[2])
+parameters<-rbind(parameters,p)
+}
+# средняя разница
+sred_razn<-data.frame(a=mean(parameters[,c("a_F")]-parameters[,c("a_M")]), s=mean(parameters[,c("s_M")]-parameters[,c("s_F")]))
+```
+Какие выводы можно сделать относительно полученных распределений для кошек и котов. Есть ли разница? Поясните.
+# у котов вес сердца больше, всреднем около 11. У кошек примерно 9
+# Параметр "a" у кошек больше всреднем на 15. А параметр "s" у кошек мельше всреднем на 0,1

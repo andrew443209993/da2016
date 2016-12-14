@@ -1,0 +1,92 @@
+---
+title: "lab5"
+author: "Мухтаров Андрей"
+date: '13 декабря 2016 г '
+output: html_document
+---
+
+
+
+## R Markdown
+Возьмите данные четырёх первых кошек из набора данных. Используя функцию gamma.estimate, получите оценки s и a для каждой кошки из выбранных. Получите стандартную ошибку методом перочинного ножа для a и для s. Не нужно писать для этого функции, просто вызовите нужное кол-во раз функцию, сохраните результаты в переменные или вектор и рассчитайте дисперсию.
+```{r}
+library(MASS) 
+data(cats)
+help(cats)
+
+```
+```{r}
+data<-data.frame(cats[1:4,])
+```
+```{r}
+gamma.estimate <- function(data) {
+  m <- mean(data)
+  v <- var(data)
+  s <- v/m
+  a <- m/s
+  return(c(a=a,s=s))
+}
+```
+```{r}
+c1<-data.frame(a=gamma.estimate(data$Hwt[2:4])[1],s=gamma.estimate(data$Hwt[2:4])[2],row.names = "1")
+c2<-data.frame(a=gamma.estimate(data$Hwt[c(1,3:4)])[1],s=gamma.estimate(data$Hwt[c(1,3:4)])[2],row.names = "2")
+c3<-data.frame(a=gamma.estimate(data$Hwt[c(1:2,4)])[1],s=gamma.estimate(data$Hwt[c(1:2,4)])[2],row.names = "3")
+c4<-data.frame(a=gamma.estimate(data$Hwt[1:3])[1],s=gamma.estimate(data$Hwt[1:3])[2],row.names = "4")
+c<-rbind(c1,c2,c3,c4)
+## оценка
+sqrt(1.5*var(c[,"a"]))
+sqrt(1.5*var(c[,"s"]))
+```
+Напишите функцию my.gamma.jk(), принимающую вектор и возвращающую стандартные ошибки для a и b. Функция должна вызывать gamma.estimate. Допустимо использовать циклы.
+```{r}
+my.gamma.jk<-function(x){
+  cc<-data.frame()
+ for(i in 1:nrow(x)){
+   if(i==1){
+     cc<-data.frame(a=gamma.estimate(x$Hwt[-i])[1],s=gamma.estimate(data$Hwt[-i])[2])
+   } else{
+   q<-data.frame(a=gamma.estimate(x$Hwt[-i])[1],s=gamma.estimate(data$Hwt[-i])[2])
+   cc<-rbind(cc,q)}
+ } 
+  ans.a<-sqrt(1.5*var(cc[,"a"]))
+   ans.s<-sqrt(1.5*var(cc[,"s"]))
+   return(c(ans.A=ans.a,ans.S=ans.s))
+}
+
+
+```
+Вызовите написанную функцию для данных из п.2. Сходятся ли полученные значения?
+```{r}
+my.gamma.jk(data)
+## значения сходятся
+```
+Вызовите написанную функцию для получения стандартных ошибок a и s для полного набора данных.
+```{r}
+my.gamma.jk(cats)
+```
+Рассчитайте параметры a и s раздельно для кошек и котов. Найдите jackknife SE для полученных параметров (всего 4).
+```{r}
+## для котов
+gamma.estimate(cats$Hwt[cats$Sex=="M"])
+my.gamma.jk(cats[cats$Sex=="M",])
+## для кошек
+gamma.estimate(cats$Hwt[cats$Sex=="F"])
+my.gamma.jk(cats[cats$Sex=="F",])
+```
+Стандартная ошибка разницы между двумя независимыми количественными оценками d1 и d2 равняется:sqrt(se1^2 + se2^2), где se1 и se2 стандартные отклонения для d1 и d2 соответственно. Рассчитайте разницу оцениваемых параметров между кошками и котами и стандартное отклонение разницы.
+```{r}
+SE.F<-my.gamma.jk(cats[cats$Sex=="F",])
+SE.M<-my.gamma.jk(cats[cats$Sex=="M",])
+dF<-gamma.estimate(cats$Hwt[cats$Sex=="F"])
+dM<-gamma.estimate(cats$Hwt[cats$Sex=="M"])
+## разница оцениваемых параметров между кошками и котами 
+raz<-data.frame(a=dF[1]-dM[1], s=dF[2]-dM[2])
+## стандартное отклонение разницы
+SE<-data.frame(a=sqrt((SE.M[1]^2)+(SE.F[1]^2)), s=sqrt((SE.M[2]^2)+(SE.F[2]^2)))
+
+```
+Означают ли полученные из предыдущего пункта значения, что наблюдается значимое влияние пола на вес сердца? Поясните ответ.
+```{r}
+## Да пол влияет на вес сердце кошек. 
+```
+
